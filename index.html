@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>SpaceX &amp; xAI — US facility map</title>
+<style>
+  :root{
+    --ink:#12202E; --dim:#5D7085; --line:#C9D6E2;
+    --launch:#1F3A5F; --mfg:#2E75B6; --engine:#7A4FB5; --dc:#B8860B; --future:#B23B3B;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#F7F9FB;color:var(--ink);
+       font-family:Arial,"Liberation Sans",Helvetica,sans-serif;font-size:10pt}
+  .wrap{max-width:1640px;margin:0 auto;padding:20px 20px 30px}
+  h1{font-size:24pt;font-weight:bold;margin:0 0 4px}
+  .sub{color:var(--dim);margin:0 0 14px;line-height:1.5}
+  svg{display:block;width:100%;max-width:1600px;height:auto;background:#fff;
+      border:1px solid var(--line);border-radius:9px}
+  footer{margin-top:12px;color:#7B8B9C;font-style:italic;line-height:1.65;font-size:8.5pt}
+  /* all SVG text = Arial 10pt (13.33 user units at 1:1) */
+  text{font-family:Arial,"Liberation Sans",Helvetica,sans-serif;font-size:13.33px}
+  .land{fill:#EEF3F8;stroke:#9FB4C7;stroke-width:1.6}
+  .ref{fill:none;stroke:#FFFFFF;stroke-width:1.7;stroke-linecap:round}
+  .leader{stroke:#8C9DAD;stroke-width:1.1;stroke-dasharray:4 3.2;fill:none}
+  .box{fill:#FFFFFF;stroke:#CFDAE5;stroke-width:1.2}
+  .box.future{stroke:var(--future);stroke-width:1.6;stroke-dasharray:5 3.5}
+  .btitle{font-weight:bold;text-anchor:middle}
+  .bbody{fill:#3F5164;text-anchor:middle}
+  .dotlab{font-weight:bold;fill:#12202E}
+  .dotlab-bg{fill:#FFFFFF;opacity:.85}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SpaceX &amp; xAI — US facility map</h1>
+  <p class="sub">Manufacturing, engine test, launch and AI-compute sites, with publicly-reported future locations.
+     Dashed rings = proposed / rumoured, not company-announced.</p>
+  <svg id="map" viewBox="0 0 1600 1000" role="img"
+       aria-label="Annotated map of SpaceX and xAI facilities in the United States"></svg>
+  <footer>
+    Sources: company disclosures and SpaceX S-1 for confirmed sites. &nbsp;PROPOSED — Grimes County &ldquo;Terafab&rdquo;: the S-1 names Tesla/Intel partners and a ~1&nbsp;TW/yr goal but states capital
+    requirements are &ldquo;not yet determined&rdquo; (the $55bn/$119bn figures come from a county tax-abatement filing, not guidance). &nbsp;PROPOSED — Pecan Island, Vermilion Parish, LA: ~130,000-acre
+    coastal Starship spaceport reported in local press (Aug 2026); not announced by SpaceX, terms private. &nbsp;Colossus GPU counts and the ~2&nbsp;GW site figure are third-party (the S-1
+    discloses ~1.0&nbsp;GW combined). &nbsp;Basemap outline is simplified and internal white lines are approximate state divisions for orientation only; dot positions approximate to site/city level.
+  </footer>
+</div>
+<script>
+const SVGNS="http://www.w3.org/2000/svg";
+const svg=document.getElementById("map");
+const el=(t,a={})=>{const n=document.createElementNS(SVGNS,t);
+  for(const k in a) n.setAttribute(k,a[k]); return n;};
+/* ---------- Albers equal-area conic ---------- */
+const rad=d=>d*Math.PI/180;
+const P1=rad(29.5),P2=rad(45.5),LAT0=rad(37.5),LON0=rad(-96);
+const nn=(Math.sin(P1)+Math.sin(P2))/2;
+const CC=Math.pow(Math.cos(P1),2)+2*nn*Math.sin(P1);
+const rho0=Math.sqrt(CC-2*nn*Math.sin(LAT0))/nn;
+function albersRaw(lon,lat){
+  const rho=Math.sqrt(CC-2*nn*Math.sin(rad(lat)))/nn, th=nn*(rad(lon)-LON0);
+  return [rho*Math.sin(th), rho0-rho*Math.cos(th)];
+}
+const US=[[-124.7,48.4],[-124.1,46.9],[-124.0,46.2],[-123.9,45.5],[-124.1,44.6],[-124.4,43.3],
+[-124.4,42.6],[-124.2,41.8],[-124.1,40.4],[-123.8,39.4],[-123.0,38.3],[-122.5,37.8],
+[-122.0,36.9],[-121.9,36.6],[-121.3,35.7],[-120.6,34.9],[-120.6,34.5],[-119.5,34.4],
+[-118.5,34.0],[-117.8,33.6],[-117.1,32.7],[-114.7,32.7],[-114.8,32.5],[-114.5,32.7],
+[-111.0,31.3],[-108.2,31.3],[-108.2,31.8],[-106.5,31.8],[-104.9,30.6],[-103.1,29.0],
+[-102.4,29.8],[-101.4,29.8],[-100.0,28.2],[-99.1,26.4],[-97.4,25.9],
+[-97.2,26.6],[-97.0,27.8],[-96.5,28.4],[-95.3,28.9],[-94.7,29.3],[-93.8,29.7],
+[-92.4,29.5],[-91.5,29.2],[-90.2,29.0],[-89.4,29.2],[-89.6,30.2],[-88.0,30.4],
+[-87.5,30.3],[-86.5,30.4],[-85.5,29.9],[-84.4,30.0],[-83.6,29.9],[-82.8,29.0],
+[-82.7,28.0],[-82.6,27.4],[-81.8,26.4],[-81.2,25.3],[-80.4,25.2],[-80.1,26.5],
+[-80.5,28.5],[-81.2,29.8],[-81.4,30.7],[-80.9,32.0],[-79.9,32.8],[-78.9,33.7],
+[-77.9,34.2],[-76.5,34.7],[-75.5,35.2],[-76.0,36.9],[-75.9,37.2],[-76.3,38.0],
+[-75.1,38.5],[-74.9,39.5],[-74.0,40.6],[-73.2,41.0],[-72.0,41.3],[-70.9,41.6],
+[-70.0,41.8],[-70.8,42.5],[-70.7,43.1],[-69.8,43.8],[-68.5,44.4],[-67.8,44.8],
+[-67.0,45.2],[-67.8,45.7],[-69.2,47.5],[-70.3,45.9],[-71.5,45.0],[-74.7,45.0],
+[-76.8,44.0],[-79.2,43.5],[-79.0,42.8],[-81.3,42.2],[-83.1,41.9],[-82.4,43.0],
+[-82.5,45.3],[-84.0,46.5],[-84.6,46.5],[-86.5,46.6],[-88.4,48.3],[-89.5,48.0],
+[-92.0,48.6],[-95.2,49.0],[-97.2,49.0],[-104.0,49.0],[-110.0,49.0],[-116.0,49.0],
+[-122.8,49.0],[-123.2,48.2],[-124.7,48.4]];
+const REF=[
+ [[-120,42],[-120,39],[-114.6,35],[-114.6,32.7]],
+ [[-124.5,42],[-117,42],[-111,42]],
+ [[-116,46],[-111,46],[-104,46],[-96.5,46]],
+ [[-109,49],[-109,41],[-102,41],[-102,37]],
+ [[-103,36.5],[-100,36.5],[-100,34.5],[-94.4,33.6]],
+ [[-103,32],[-103,36.5]],
+ [[-94.4,33.6],[-94,29.7]],
+ [[-91,36.5],[-89.5,36],[-88.1,35],[-88.2,30.4]],
+ [[-90.3,35],[-84.3,35]],
+ [[-90.3,36.5],[-84.8,36.6],[-81.7,36.6]],
+ [[-87.6,30.3],[-85,31],[-82,30.4]],
+ [[-96.5,46],[-96.5,40.6],[-95.3,40],[-91.4,40.4],[-87.5,41.7]],
+ [[-84.8,38.8],[-80.5,40.6]]];
+/* fit projection into the central map region (gutters left free for callouts) */
+const MX0=330,MX1=1290,MY0=150,MY1=830;
+const raw=US.map(p=>albersRaw(p[0],p[1]));
+const xs=raw.map(p=>p[0]), ys=raw.map(p=>p[1]);
+const minx=Math.min.apply(null,xs),maxx=Math.max.apply(null,xs);
+const miny=Math.min.apply(null,ys),maxy=Math.max.apply(null,ys);
+const sc=Math.min((MX1-MX0)/(maxx-minx),(MY1-MY0)/(maxy-miny));
+const offX=MX0+((MX1-MX0)-(maxx-minx)*sc)/2, offY=MY0+((MY1-MY0)-(maxy-miny)*sc)/2;
+/* NOTE: Albers y increases northward; SVG y increases downward, so invert y. */
+const proj=(lon,lat)=>{const p=albersRaw(lon,lat);
+  return [offX+(p[0]-minx)*sc, offY+(maxy-p[1])*sc];};
+const COL={launch:"#1F3A5F",mfg:"#2E75B6",engine:"#7A4FB5",dc:"#B8860B",future:"#B23B3B"};
+/* box anchors sit in fixed gutters: 3 left, 4 right, 1 top, 4 bottom — collisions impossible */
+const SITES=[
+ {n:"Redmond, WA",t:"mfg",lat:47.674,lon:-122.122,box:[178,108],lab:[13,-9,"start"],
+  d:"Starlink satellite manufacturing and avionics — the constellation production line."},
+ {n:"Vandenberg SFB, CA",t:"launch",lat:34.742,lon:-120.572,box:[178,330],lab:[13,-8,"start"],
+  d:"West-coast launch (SLC-4E). Flies the 70° and 97.6° polar shells Starlink needs for high-latitude coverage."},
+ {n:"Hawthorne, CA",t:"mfg",lat:33.921,lon:-118.329,box:[178,480],lab:[13,16,"start"],
+  d:"HQ; Falcon 9 / Falcon Heavy production and Dragon capsule assembly. The original factory."},
+ {n:"Memphis, TN — COLOSSUS",t:"dc",lat:35.150,lon:-90.049,box:[1422,100],lab:[-13,-10,"end"],
+  d:"COLOSSUS 1 & 2 (xAI): ~555k GPUs across Boxtown, Tulane Rd and Bldg 3. ~1.0 GW per S-1; ~2 GW site ambition."},
+ {n:"Southaven, MS",t:"dc",lat:34.989,lon:-90.013,box:[1422,290],lab:[13,17,"start"],
+  d:"Colossus 2 overflow campus, just over the state line from Memphis."},
+ {n:"Cape Canaveral, FL",t:"launch",lat:28.608,lon:-80.604,box:[1422,470],lab:[0,-16,"middle"],
+  d:"LC-39A and SLC-40 — the highest-cadence Falcon pads, plus a Starship tower at 39A."},
+ {n:"Roberts Road, FL — GIGABAY",t:"mfg",lat:28.515,lon:-80.710,box:[1422,680],lab:[-13,17,"end"],
+  d:"Florida Starfactory, feeding the KSC pads. GIGABAY: ~815k sq ft over multiple levels, ~380 ft tall, 24 work cells, 400-ton cranes. Site prep Mar 2025; operational target end-2026."},
+ {n:"Grimes County, TX — TERAFAB",t:"future",lat:30.543,lon:-95.987,box:[880,100],lab:[13,2,"start"],
+  d:"TERAFAB (proposed): SpaceX–Tesla–Intel fab on Intel 14A; ~1 TW/yr compute-hardware ambition. S-1 says capex not yet determined."},
+ {n:"McGregor, TX",t:"engine",lat:31.446,lon:-97.408,box:[620,880],lab:[-13,-8,"end"],
+  d:"Engine test site: Merlin, Raptor and Draco acceptance testing before flight."},
+ {n:"Bastrop, TX",t:"mfg",lat:30.111,lon:-97.315,box:[890,880],lab:[-13,16,"end"],
+  d:"Starlink user-terminal manufacturing — ~200k terminals/week, scaling toward 15–20M/yr."},
+ {n:"Starbase, TX — GIGABAY",t:"launch",lat:25.997,lon:-97.155,box:[200,880],lab:[13,-9,"start"],
+  d:"Starship development, build and launch (Boca Chica). GIGABAY: ~700k sq ft, ~$250m, ~380 ft tall. Ground broken Jul 2025; completion targeted Dec 2026. Stated aim 1,000 Starships/yr."},
+ {n:"Pecan Island, LA",t:"future",lat:29.644,lon:-92.409,box:[1160,880],lab:[13,18,"start"],
+  d:"PROPOSED: ~130,000 acres of Vermilion Parish marsh (~200 sq mi, mostly ExxonMobil land). Reported plans include launch towers AND a dedicated Starfactory. Barge-linked midway between Starbase and the Cape. Deal unsigned; not announced by SpaceX."}
+];
+/* ---------- land ---------- */
+const gMap=el("g"); svg.appendChild(gMap);
+gMap.appendChild(el("polygon",{"class":"land",
+  points:US.map(function(p){return proj(p[0],p[1]).join(",");}).join(" ")}));
+REF.forEach(function(seg){gMap.appendChild(el("polyline",{"class":"ref",
+  points:seg.map(function(p){return proj(p[0],p[1]).join(",");}).join(" ")}));});
+/* ---------- callouts (all text centre-aligned) ---------- */
+const BW=252, LH=17, PAD=11;
+function wrapText(s,max){
+  const w=s.split(/\s+/); const out=[]; let ln="";
+  w.forEach(function(x){ if((ln+" "+x).trim().length>max){out.push(ln.trim()); ln=x;} else ln+=" "+x; });
+  if(ln.trim()) out.push(ln.trim()); return out;
+}
+const gBox=el("g"); svg.appendChild(gBox);
+SITES.forEach(function(s){
+  const p=proj(s.lon,s.lat), x=p[0], y=p[1];
+  const bx=s.box[0], by=s.box[1];
+  const lines=wrapText(s.d,36);
+  const BH=PAD*2+LH*(lines.length+1);
+  const rx=bx-BW/2, ry=by-BH/2;
+  const fut=(s.t==="future"), col=COL[s.t];
+  const cx = x<rx ? rx : (x>rx+BW ? rx+BW : bx);
+  const cy = y<ry ? ry : (y>ry+BH ? ry+BH : by);
+  gBox.appendChild(el("line",{"class":"leader",x1:cx,y1:cy,x2:x,y2:y}));
+  gBox.appendChild(el("rect",{"class":"box"+(fut?" future":""),x:rx,y:ry,width:BW,height:BH,rx:8}));
+  const t1=el("text",{"class":"btitle",x:bx,y:ry+PAD+13,fill:col}); t1.textContent=s.n;
+  gBox.appendChild(t1);
+  lines.forEach(function(ln,i){
+    const t=el("text",{"class":"bbody",x:bx,y:ry+PAD+13+LH*(i+1)}); t.textContent=ln;
+    gBox.appendChild(t);
+  });
+});
+/* ---------- dots + non-overlapping labels ---------- */
+const gDot=el("g"); svg.appendChild(gDot);
+SITES.forEach(function(s){
+  const p=proj(s.lon,s.lat), x=p[0], y=p[1];
+  const fut=(s.t==="future"), col=COL[s.t];
+  gDot.appendChild(el("circle",{cx:x,cy:y,r:8.5,fill:fut?"#fff":col,
+    stroke:col,"stroke-width":2.6,"stroke-dasharray":fut?"3.5 2.5":""}));
+  gDot.appendChild(el("circle",{cx:x,cy:y,r:2.8,fill:fut?col:"#fff"}));
+  const ox=s.lab[0], oy=s.lab[1], anch=s.lab[2], nm=s.n.split(",")[0];
+  const w=nm.length*7.0+8, lx=x+ox, ly=y+oy;
+  const bgx = anch==="end" ? lx-w : (anch==="middle" ? lx-w/2 : lx);
+  gDot.appendChild(el("rect",{"class":"dotlab-bg",x:bgx-3,y:ly-12,width:w+6,height:17,rx:4}));
+  const t=el("text",{"class":"dotlab",x:lx,y:ly,"text-anchor":anch}); t.textContent=nm;
+  gDot.appendChild(t);
+});
+/* ---------- legend ---------- */
+const LG=[["launch","Launch site"],["mfg","Manufacturing"],["engine","Engine test / R&D"],
+          ["dc","AI data centre (xAI)"],["future","Proposed / rumoured"]];
+const lgX=56,lgY=604,lgW=296,lgH=LG.length*26+24;
+const gL=el("g"); svg.appendChild(gL);
+gL.appendChild(el("rect",{x:lgX,y:lgY,width:lgW,height:lgH,rx:8,
+  fill:"#fff",stroke:"#C9D6E2","stroke-width":1.2}));
+LG.forEach(function(kv,i){
+  const cy=lgY+24+i*26;
+  gL.appendChild(el("circle",{cx:lgX+24,cy:cy-4,r:8,fill:kv[0]==="future"?"#fff":COL[kv[0]],
+    stroke:COL[kv[0]],"stroke-width":2.4,"stroke-dasharray":kv[0]==="future"?"3.5 2.5":""}));
+  const t=el("text",{x:lgX+44,y:cy}); t.textContent=kv[1]; gL.appendChild(t);
+});
+</script>
+</body>
+</html>
