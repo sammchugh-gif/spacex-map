@@ -18,6 +18,14 @@
   svg{display:block;width:100%;max-width:1600px;height:auto;background:#fff;
       border:1px solid var(--line);border-radius:9px}
   footer{margin-top:12px;color:#7B8B9C;font-style:italic;line-height:1.65;font-size:8.5pt}
+  .imgblock{margin-top:34px;padding-top:22px;border-top:1px solid var(--line)}
+  .imgblock h2{font-size:13pt;margin:0 0 4px}
+  .hint{color:var(--dim);margin:0 0 12px;line-height:1.5}
+  .imgblock button{font:inherit;color:var(--mfg);background:#fff;cursor:pointer;
+       border:1px solid var(--line);border-radius:6px;padding:5px 11px;margin-right:7px}
+  .imgblock button:hover{background:#F2F7FC;border-color:var(--mfg)}
+  .imgblock img{display:block;width:100%;max-width:1600px;height:auto;
+       border:1px solid var(--line);border-radius:9px}
   /* all SVG text = Arial 10pt (13.33 user units at 1:1) */
   text{font-family:Arial,"Liberation Sans",Helvetica,sans-serif;font-size:13.33px}
   .land{fill:#EEF3F8;stroke:#9FB4C7;stroke-width:1.6}
@@ -38,6 +46,15 @@
      Dashed rings = proposed / rumoured, not company-announced.</p>
   <svg id="map" viewBox="0 0 1600 1000" role="img"
        aria-label="Annotated map of SpaceX and xAI facilities in the United States"></svg>
+
+  <div class="imgblock">
+    <h2>Copy-ready image</h2>
+    <p class="hint">Right-click the image below and choose <strong>Copy image</strong> to paste straight into a note, email or deck. Or download:
+       <button id="dlpng" type="button">PNG &mdash; 3200&times;2000</button>
+       <button id="dlsvg" type="button">SVG &mdash; vector</button></p>
+    <img id="rasterMap"
+         alt="SpaceX and xAI US facility map: launch, manufacturing, engine test and AI data centre sites"/>
+  </div>
   <footer>
     Sources: company disclosures and SpaceX S-1 for confirmed sites. &nbsp;PROPOSED — Grimes County &ldquo;Terafab&rdquo;: the S-1 names Tesla/Intel partners and a ~1&nbsp;TW/yr goal but states capital
     requirements are &ldquo;not yet determined&rdquo; (the $55bn/$119bn figures come from a county tax-abatement filing, not guidance). &nbsp;PROPOSED — Pecan Island, Vermilion Parish, LA: ~130,000-acre
@@ -125,8 +142,8 @@ const SITES=[
   d:"TERAFAB (proposed): SpaceX–Tesla–Intel fab on Intel 14A; ~1 TW/yr compute-hardware ambition. S-1 says capex not yet determined."},
  {n:"McGregor, TX",t:"engine",lat:31.446,lon:-97.408,box:[620,880],lab:[-13,-8,"end"],
   d:"Engine test site: Merlin, Raptor and Draco acceptance testing before flight."},
- {n:"Bastrop, TX",t:"mfg",lat:30.111,lon:-97.315,box:[890,880],lab:[-13,16,"end"],
-  d:"Starlink user-terminal manufacturing — ~200k terminals/week, scaling toward 15–20M/yr."},
+ {n:"Bastrop, TX — GIGASAT",t:"mfg",lat:30.111,lon:-97.315,box:[890,880],lab:[-13,16,"end"],
+  d:"GIGASAT: ~11M sq ft on ~1,000 acres, vertically integrated from solar cells to AI1 orbital data-centre satellites. Target ~1 GW/yr orbital compute by late 2027. Also Starlink user terminals (~200k/wk)."},
  {n:"Starbase, TX — GIGABAY",t:"launch",lat:25.997,lon:-97.155,box:[200,880],lab:[13,-9,"start"],
   d:"Starship development, build and launch (Boca Chica). GIGABAY: ~700k sq ft, ~$250m, ~380 ft tall. Ground broken Jul 2025; completion targeted Dec 2026. Stated aim 1,000 Starships/yr."},
  {n:"Pecan Island, LA",t:"future",lat:29.644,lon:-92.409,box:[1160,880],lab:[13,18,"start"],
@@ -191,6 +208,67 @@ LG.forEach(function(kv,i){
   gL.appendChild(el("circle",{cx:lgX+24,cy:cy-4,r:8,fill:kv[0]==="future"?"#fff":COL[kv[0]],
     stroke:COL[kv[0]],"stroke-width":2.4,"stroke-dasharray":kv[0]==="future"?"3.5 2.5":""}));
   const t=el("text",{x:lgX+44,y:cy}); t.textContent=kv[1]; gL.appendChild(t);
+});
+/* ---------- copy-ready raster / vector export ----------
+   The map is drawn by script, so there is no image to right-click. We serialise
+   the live SVG (with its styles inlined, since a standalone file cannot see the
+   page stylesheet), rasterise it via canvas, and hand back a real PNG. */
+const SVG_CSS=[
+ 'text{font-family:Arial,"Liberation Sans",Helvetica,sans-serif;font-size:13.33px}',
+ '.land{fill:#EEF3F8;stroke:#9FB4C7;stroke-width:1.6}',
+ '.ref{fill:none;stroke:#FFFFFF;stroke-width:1.7;stroke-linecap:round}',
+ '.leader{stroke:#8C9DAD;stroke-width:1.1;stroke-dasharray:4 3.2;fill:none}',
+ '.box{fill:#FFFFFF;stroke:#CFDAE5;stroke-width:1.2}',
+ '.box.future{stroke:#B23B3B;stroke-width:1.6;stroke-dasharray:5 3.5}',
+ '.btitle{font-weight:bold;text-anchor:middle}',
+ '.bbody{fill:#3F5164;text-anchor:middle}',
+ '.dotlab{font-weight:bold;fill:#12202E}',
+ '.dotlab-bg{fill:#FFFFFF;opacity:.85}'].join("\n");
+function svgMarkup(){
+  const c=svg.cloneNode(true);
+  c.setAttribute("xmlns",SVGNS);
+  c.setAttribute("width","1600"); c.setAttribute("height","1000");
+  const bg=el("rect",{x:0,y:0,width:1600,height:1000,fill:"#FFFFFF"});
+  c.insertBefore(bg,c.firstChild);
+  const st=document.createElementNS(SVGNS,"style"); st.textContent=SVG_CSS;
+  c.insertBefore(st,c.firstChild);
+  return '<?xml version="1.0" encoding="UTF-8"?>\n'
+       + new XMLSerializer().serializeToString(c);
+}
+function svgURL(){
+  return URL.createObjectURL(new Blob([svgMarkup()],{type:"image/svg+xml;charset=utf-8"}));
+}
+function toPNG(scale,cb){
+  const url=svgURL(), im=new Image();
+  im.onload=function(){
+    const cv=document.createElement("canvas");
+    cv.width=1600*scale; cv.height=1000*scale;
+    const cx=cv.getContext("2d");
+    cx.fillStyle="#FFFFFF"; cx.fillRect(0,0,cv.width,cv.height);
+    cx.drawImage(im,0,0,cv.width,cv.height);
+    URL.revokeObjectURL(url);
+    cv.toBlob(cb,"image/png");
+  };
+  im.onerror=function(){URL.revokeObjectURL(url); cb(null);};
+  im.src=url;
+}
+function save(blob,name){
+  if(!blob) return;
+  const a=document.createElement("a"), u=URL.createObjectURL(blob);
+  a.href=u; a.download=name; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); setTimeout(function(){URL.revokeObjectURL(u);},4000);
+}
+/* populate the on-page image so it can be right-clicked and copied */
+toPNG(2,function(b){
+  const img=document.getElementById("rasterMap");
+  if(b) img.src=URL.createObjectURL(b);
+  else { img.src=svgURL(); }
+});
+document.getElementById("dlpng").addEventListener("click",function(){
+  toPNG(2,function(b){save(b,"spacex-facility-map.png");});
+});
+document.getElementById("dlsvg").addEventListener("click",function(){
+  save(new Blob([svgMarkup()],{type:"image/svg+xml;charset=utf-8"}),"spacex-facility-map.svg");
 });
 </script>
 </body>
