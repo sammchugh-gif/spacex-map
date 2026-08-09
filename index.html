@@ -6,8 +6,8 @@
 <title>SpaceX &amp; xAI — US facility map</title>
 <style>
   :root{
-    --ink:#12202E; --dim:#5D7085; --line:#C9D6E2;
-    --launch:#1F3A5F; --mfg:#2E75B6; --engine:#7A4FB5; --dc:#B8860B; --future:#B23B3B;
+    --ink:#1F2A33; --dim:#6B7780; --line:#BFBFBF;
+    --launch:#1F4E79; --mfg:#4A90A4; --engine:#2F5B8A; --dc:#E97132; --future:#BFBFBF;
   }
   *{box-sizing:border-box}
   body{margin:0;background:#F7F9FB;color:var(--ink);
@@ -21,21 +21,21 @@
   .imgblock{margin-top:34px;padding-top:22px;border-top:1px solid var(--line)}
   .imgblock h2{font-size:13pt;margin:0 0 4px}
   .hint{color:var(--dim);margin:0 0 12px;line-height:1.5}
-  .imgblock button{font:inherit;color:var(--mfg);background:#fff;cursor:pointer;
+  .imgblock button{font:inherit;color:var(--launch);background:#fff;cursor:pointer;
        border:1px solid var(--line);border-radius:6px;padding:5px 11px;margin-right:7px}
-  .imgblock button:hover{background:#F2F7FC;border-color:var(--mfg)}
+  .imgblock button:hover{background:#F2F7FC;border-color:var(--launch)}
   .imgblock img{display:block;width:100%;max-width:1600px;height:auto;
        border:1px solid var(--line);border-radius:9px}
   /* all SVG text = Arial 10pt (13.33 user units at 1:1) */
   text{font-family:Arial,"Liberation Sans",Helvetica,sans-serif;font-size:13.33px}
-  .land{fill:#EEF3F8;stroke:#9FB4C7;stroke-width:1.6}
+  .land{fill:#EDF1F5;stroke:#BFBFBF;stroke-width:1.6}
   .ref{fill:none;stroke:#FFFFFF;stroke-width:1.7;stroke-linecap:round}
-  .leader{stroke:#8C9DAD;stroke-width:1.1;stroke-dasharray:4 3.2;fill:none}
-  .box{fill:#FFFFFF;stroke:#CFDAE5;stroke-width:1.2}
-  .box.future{stroke:var(--future);stroke-width:1.6;stroke-dasharray:5 3.5}
+  .leader{stroke:#BFBFBF;stroke-width:1.1;stroke-dasharray:4 3.2;fill:none}
+  .box{fill:#FFFFFF;stroke:#BFBFBF;stroke-width:1.2}
+  .box.future{stroke:#A6A6A6;stroke-width:1.8;stroke-dasharray:5 3.5}
   .btitle{font-weight:bold;text-anchor:middle}
-  .bbody{fill:#3F5164;text-anchor:middle}
-  .dotlab{font-weight:bold;fill:#12202E}
+  .bbody{fill:#4A5560;text-anchor:middle}
+  .dotlab{font-weight:bold;fill:#1F2A33}
   .dotlab-bg{fill:#FFFFFF;opacity:.85}
 </style>
 </head>
@@ -121,7 +121,11 @@ const offX=MX0+((MX1-MX0)-(maxx-minx)*sc)/2, offY=MY0+((MY1-MY0)-(maxy-miny)*sc)
 /* NOTE: Albers y increases northward; SVG y increases downward, so invert y. */
 const proj=(lon,lat)=>{const p=albersRaw(lon,lat);
   return [offX+(p[0]-minx)*sc, offY+(maxy-p[1])*sc];};
-const COL={launch:"#1F3A5F",mfg:"#2E75B6",engine:"#7A4FB5",dc:"#B8860B",future:"#B23B3B"};
+/* Manufacturing takes the teal, not the second blue: #1F4E79 and #2F5B8A are too
+   close to separate at dot size, and launch/manufacturing sit side by side. */
+const COL={launch:"#1F4E79",mfg:"#4A90A4",engine:"#2F5B8A",dc:"#E97132",future:"#A6A6A6"};
+/* proposed sites read as light grey; the title needs a darker grey to stay legible */
+const TITLE=Object.assign({},COL,{future:"#7F7F7F"});
 /* box anchors sit in fixed gutters: 3 left, 4 right, 1 top, 4 bottom — collisions impossible */
 const SITES=[
  {n:"Redmond, WA",t:"mfg",lat:47.674,lon:-122.122,box:[178,108],lab:[13,-9,"start"],
@@ -174,7 +178,7 @@ SITES.forEach(function(s){
   const cy = y<ry ? ry : (y>ry+BH ? ry+BH : by);
   gBox.appendChild(el("line",{"class":"leader",x1:cx,y1:cy,x2:x,y2:y}));
   gBox.appendChild(el("rect",{"class":"box"+(fut?" future":""),x:rx,y:ry,width:BW,height:BH,rx:8}));
-  const t1=el("text",{"class":"btitle",x:bx,y:ry+PAD+13,fill:col}); t1.textContent=s.n;
+  const t1=el("text",{"class":"btitle",x:bx,y:ry+PAD+13,fill:TITLE[s.t]}); t1.textContent=s.n;
   gBox.appendChild(t1);
   lines.forEach(function(ln,i){
     const t=el("text",{"class":"bbody",x:bx,y:ry+PAD+13+LH*(i+1)}); t.textContent=ln;
@@ -202,7 +206,7 @@ const LG=[["launch","Launch site"],["mfg","Manufacturing"],["engine","Engine tes
 const lgX=56,lgY=604,lgW=296,lgH=LG.length*26+24;
 const gL=el("g"); svg.appendChild(gL);
 gL.appendChild(el("rect",{x:lgX,y:lgY,width:lgW,height:lgH,rx:8,
-  fill:"#fff",stroke:"#C9D6E2","stroke-width":1.2}));
+  fill:"#fff",stroke:"#BFBFBF","stroke-width":1.2}));
 LG.forEach(function(kv,i){
   const cy=lgY+24+i*26;
   gL.appendChild(el("circle",{cx:lgX+24,cy:cy-4,r:8,fill:kv[0]==="future"?"#fff":COL[kv[0]],
@@ -215,14 +219,14 @@ LG.forEach(function(kv,i){
    page stylesheet), rasterise it via canvas, and hand back a real PNG. */
 const SVG_CSS=[
  'text{font-family:Arial,"Liberation Sans",Helvetica,sans-serif;font-size:13.33px}',
- '.land{fill:#EEF3F8;stroke:#9FB4C7;stroke-width:1.6}',
+ '.land{fill:#EDF1F5;stroke:#BFBFBF;stroke-width:1.6}',
  '.ref{fill:none;stroke:#FFFFFF;stroke-width:1.7;stroke-linecap:round}',
- '.leader{stroke:#8C9DAD;stroke-width:1.1;stroke-dasharray:4 3.2;fill:none}',
- '.box{fill:#FFFFFF;stroke:#CFDAE5;stroke-width:1.2}',
- '.box.future{stroke:#B23B3B;stroke-width:1.6;stroke-dasharray:5 3.5}',
+ '.leader{stroke:#BFBFBF;stroke-width:1.1;stroke-dasharray:4 3.2;fill:none}',
+ '.box{fill:#FFFFFF;stroke:#BFBFBF;stroke-width:1.2}',
+ '.box.future{stroke:#A6A6A6;stroke-width:1.8;stroke-dasharray:5 3.5}',
  '.btitle{font-weight:bold;text-anchor:middle}',
- '.bbody{fill:#3F5164;text-anchor:middle}',
- '.dotlab{font-weight:bold;fill:#12202E}',
+ '.bbody{fill:#4A5560;text-anchor:middle}',
+ '.dotlab{font-weight:bold;fill:#1F2A33}',
  '.dotlab-bg{fill:#FFFFFF;opacity:.85}'].join("\n");
 function svgMarkup(){
   const c=svg.cloneNode(true);
